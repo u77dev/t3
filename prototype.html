@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Крестики-нолики T3</title>
+    <style>
+        * {
+            margin: 0;
+            font-size: 16px;
+            padding: 0;
+        }
+        body {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .area div[data-col] {
+            position: relative;
+            display: flex;
+            width: 9rem;
+            height: 9rem;
+            border: 0.5rem solid #e2864a;
+        }
+        .area div[data-row] {
+            display: flex;
+            width: 30rem;
+        }
+        .area div[data-col]:first-child{
+            border-left-color: transparent;
+        }
+        .area div[data-col]:last-child{
+            border-right-color: transparent;
+        }
+        .area div[data-row]:first-child div[data-col]{
+            border-top-color: transparent;
+        }
+        .area div[data-row]:last-child div[data-col]{
+            border-bottom-color: transparent;
+        }
+        .zero:before{
+            content: '';
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            width: 5rem;
+            height: 5rem;
+            border-radius: 50%;
+            border: 1rem solid #3c8866;
+        }
+        .cross::after,
+        .cross::before{
+            content: '';
+            position: absolute;
+            background-color: #883c66;
+            border-radius: .75rem;
+            width: 9rem;
+            height: 1rem;
+            top: 4rem;
+            left: 0rem;
+        }
+        .cross::before{
+            transform: rotate(45deg);
+        }
+        .cross::after{
+            transform: rotate(-45deg);
+        }
+    </style>
+</head>
+<body>
+
+<div class="area">
+    <div data-row="0">
+        <div data-col="0"></div><div data-col="1"></div><div data-col="2"></div>
+    </div>
+    <div data-row="1">
+        <div data-col="0"></div><div data-col="1"></div><div data-col="2"></div>
+    </div>
+    <div data-row="2">
+        <div data-col="0"></div><div data-col="1"></div><div data-col="2"></div>
+    </div>
+</div>
+
+<script>
+    let area = [
+            [null, null, null],
+            [null, null, null],
+            [null, null, null],
+        ],
+        cross = 1,
+        zero = -1,
+        moves = new Map([]),
+        max_move = 3,
+        mover = cross,
+        winner = 0;
+
+    moves.set(cross, []);
+    moves.set(zero, []);
+
+    let cols = document.querySelectorAll(".area div[data-col]");
+    cols.forEach(col => {
+        col.addEventListener('click', () => {
+            if (0 === winner) {
+                move(col.parentElement.dataset.row, col.dataset.col)
+            }
+            if (!(0 === winner)) {
+                setTimeout(() => {
+                    alert('Игра закончилась, победил: ' + whois(winner));
+                    if (confirm('Хотите сыграть ещё раз?')) {
+                        newGame();
+                    }
+                }, 500);
+            }
+        });
+    });
+
+    function move(row, col) {
+        if (area[row][col] === null) {
+            area[row][col] = mover;
+            moves.get(mover).push({
+                row: row,
+                col: col
+            });
+            if (moves.get(mover).length > max_move) {
+                let first_move = moves.get(mover)[0];
+                area[first_move.row][first_move.col] = null;
+                moves.get(mover).shift();
+            }
+            mover *= -1; // toggle mover
+            renderArea();
+            checkWinner();
+        } else {
+            alert('Сюда нельзя ходить');
+        }
+    }
+
+    function whois(player = null) {
+        if (player === null) {
+            player = mover;
+        }
+        return player === cross ? 'X' : 'O';
+    }
+
+    function newGame() {
+        mover = winner;
+        moves = new Map([]);
+        moves.set(cross, []);
+        moves.set(zero, []);
+        winner = 0;
+        area = [
+            [null, null, null],
+            [null, null, null],
+            [null, null, null],
+        ];
+        // moves.push(
+        renderArea();
+        alert('Первым ходит победитель, а значит: ' + whois(mover));
+    }
+
+    function renderArea() {
+        for (let r = 0; r < 3; r++) {
+            for (let c = 0; c < 3; c++) {
+                el = document.querySelector('div[data-row="'+r+'"]>div[data-col="'+c+'"]')
+                if (area[r][c] === cross) {
+                    el.classList.add("cross");
+                } else if (area[r][c] === zero) {
+                    el.classList.add("zero");
+                } else {
+                    el.classList.remove("zero");
+                    el.classList.remove("cross");
+                }
+            }
+        }
+    }
+
+    function checkWinner() {
+        let sum_row = 0,
+            sum_col = 0,
+            sum_diagonal_left = 0,
+            sum_diagonal_right = 0;
+
+        for (let r = 0; r < 3; r++) {
+            sum_diagonal_left += area[r][r];
+            sum_diagonal_right += area[r][2-r];
+            for (let c = 0; c < 3; c++) {
+                sum_row += area[c][r];
+                sum_col += area[r][c];
+            }
+
+            compareWinnerSum(sum_row);
+            compareWinnerSum(sum_col);
+            sum_row = 0;
+            sum_col = 0;
+        }
+        compareWinnerSum(sum_diagonal_left);
+        compareWinnerSum(sum_diagonal_right);
+
+        return winner;
+    }
+
+    function compareWinnerSum(sum) {
+        if (sum === cross * 3) {
+            winner = cross;
+        } else if (sum === zero * 3) {
+            winner = zero;
+        }
+    }
+</script>
+
+</body>
+</html>
